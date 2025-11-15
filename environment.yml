@@ -1,0 +1,9 @@
+name: rc_comput_notes_conda
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip=25.3
+  - pip:
+    - -r requirements.txt
