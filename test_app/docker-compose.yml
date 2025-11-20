@@ -1,0 +1,50 @@
+services:
+  backend: 
+    build:
+      context: ./backend
+      dockerfile: Dockerfile #the docker file we used to build container for backend
+      target: production
+    container_name: signal-lab-backend
+    ports:
+      - "8000:8000" # this is the default port for our backend
+    environment:
+      - PYTHONPATH=/app #the python working directoiry in Docker container
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"] #check the health of connection/request by sending a request to heath endpoint
+      interval: 30s
+      timeout: 10s #if no response from backend API health endpoint, test fail
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - signal-lab-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # Dockerfile of frontend
+      target: runner
+    container_name: signal-lab-frontend
+    ports:
+      - "3000:3000" #default port of the front end
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000 #the environment variable we add to link frontend to backend port
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - signal-lab-network
+
+networks:
+  signal-lab-network:
+    driver: bridge
